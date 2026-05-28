@@ -1,0 +1,17 @@
+name: "Voltronic Adapter"
+description: "Connect to Voltronic Inverter"
+version: "1.0.0"
+slug: "voltronic"
+init: false
+arch:
+  - amd64
+  - i386
+privileged:
+  - "SYS_MODULE"
+  - "SYS_RAWIO"
+usb: true
+host_network: true
+services:
+  - "mqtt:need"
+devices:
+  - "/dev/hidraw0:/dev/hidraw0:rwm"
