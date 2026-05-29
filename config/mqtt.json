@@ -31,7 +31,7 @@
             "Load_va": "ac_output_power_va",
             "Bus_voltage": "bus_voltage",
             "Heatsink_temperature": "inverter_heat_sink_temperature",
-            "Battery_capacity": "battery_capacity",
+            "Battery_SOC": "battery_soc",
             "Battery_voltage": "battery_voltage",
             "Battery_charge_current": "battery_charging_current",
             "Battery_discharge_current": "battery_discharge_current",

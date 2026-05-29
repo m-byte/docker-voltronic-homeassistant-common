@@ -97,8 +97,8 @@ Bus_voltage=`echo $INVERTER_DATA | jq '.Bus_voltage' -r`
 Heatsink_temperature=`echo $INVERTER_DATA | jq '.Heatsink_temperature' -r`
 [ ! -z "$Heatsink_temperature" ] && pushMQTTData "Heatsink_temperature" "$Heatsink_temperature"
 
-Battery_capacity=`echo $INVERTER_DATA | jq '.Battery_capacity' -r`
-[ ! -z "$Battery_capacity" ] && pushMQTTData "Battery_capacity" "$Battery_capacity"
+Battery_SOC=`echo $INVERTER_DATA | jq '.Battery_SOC' -r`
+[ ! -z "$Battery_SOC" ] && pushMQTTData "Battery_SOC" "$Battery_SOC"
 
 Battery_voltage=`echo $INVERTER_DATA | jq '.Battery_voltage' -r`
 [ ! -z "$Battery_voltage" ] && pushMQTTData "Battery_voltage" "$Battery_voltage"

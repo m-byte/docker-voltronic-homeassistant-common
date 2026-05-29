@@ -39,6 +39,21 @@ registerTopic () {
         -m "$payload"
 }
 
+unregisterTopic () {
+    local name="$1"
+    local object_id="${MQTT_DEVICENAME}_${name}"
+
+    mosquitto_pub \
+        -h $MQTT_SERVER \
+        -p $MQTT_PORT \
+        -u "$MQTT_USERNAME" \
+        -P "$MQTT_PASSWORD" \
+        -i $MQTT_CLIENTID \
+        -r \
+        -t "$MQTT_TOPIC/sensor/${object_id}/config" \
+        -m ""
+}
+
 registerInverterRawCMD () {
     mosquitto_pub \
         -h $MQTT_SERVER \
@@ -57,6 +72,7 @@ registerInverterRawCMD () {
 # Live measurements get device_class + state_class "measurement".
 # Setpoints (config voltages/currents) get a device_class but no state_class (no long-term stats).
 # Enum/boolean/mode topics get neither, only an icon.
+unregisterTopic "Battery_capacity"
 registerTopic "Inverter_mode" "" "solar-power" "" "" # 1 = Power_On, 2 = Standby, 3 = Line, 4 = Battery, 5 = Fault, 6 = Power_Saving, 7 = Unknown
 registerTopic "AC_grid_voltage" "V" "power-plug" "voltage" "measurement"
 registerTopic "AC_grid_frequency" "Hz" "current-ac" "frequency" "measurement"
@@ -75,7 +91,7 @@ registerTopic "Load_total_watthour" "Wh" "chart-bell-curve" "energy" "total_incr
 registerTopic "Load_va" "VA" "chart-bell-curve" "apparent_power" "measurement"
 registerTopic "Bus_voltage" "V" "details" "voltage" "measurement"
 registerTopic "Heatsink_temperature" "°C" "details" "temperature" "measurement"
-registerTopic "Battery_capacity" "%" "battery-outline" "battery" "measurement"
+registerTopic "Battery_SOC" "%" "battery-outline" "battery" "measurement"
 registerTopic "Battery_voltage" "V" "battery-outline" "voltage" "measurement"
 registerTopic "Battery_charge_current" "A" "current-dc" "current" "measurement"
 registerTopic "Battery_discharge_current" "A" "current-dc" "current" "measurement"

@@ -113,7 +113,7 @@ int main(int argc, char* argv[]) {
     int voltage_bus;
     float voltage_batt;
     int batt_charge_current;
-    int batt_capacity;
+    int batt_soc;
     int temp_heatsink;
     float pv_input_current;
     float pv_input_voltage;
@@ -216,7 +216,7 @@ int main(int argc, char* argv[]) {
                 // Parse and display values
                 // Extended QPIGS (this inverter returns 4 fields past device status: fan offset,
                 // EEPROM version, PV charging power, status2). We read field 20 (PV charging power).
-                sscanf(reply1->c_str(), "%f %f %f %f %d %d %d %d %f %d %d %d %f %f %f %d %8s %d %d %d", &voltage_grid, &freq_grid, &voltage_out, &freq_out, &load_va, &load_watt, &load_percent, &voltage_bus, &voltage_batt, &batt_charge_current, &batt_capacity, &temp_heatsink, &pv_input_current, &pv_input_voltage, &scc_voltage, &batt_discharge_current, device_status, &qpigs_unused, &qpigs_unused, &pv_charging_power);
+                sscanf(reply1->c_str(), "%f %f %f %f %d %d %d %d %f %d %d %d %f %f %f %d %8s %d %d %d", &voltage_grid, &freq_grid, &voltage_out, &freq_out, &load_va, &load_watt, &load_percent, &voltage_bus, &voltage_batt, &batt_charge_current, &batt_soc, &temp_heatsink, &pv_input_current, &pv_input_voltage, &scc_voltage, &batt_discharge_current, device_status, &qpigs_unused, &qpigs_unused, &pv_charging_power);
                 // QPIRI on this inverter has no '-' separator and returns the parallel-max-number
                 // field before machine type, so parse that slot instead of a literal dash.
                 sscanf(reply2->c_str(), "%f %f %f %f %f %d %d %f %f %f %f %f %d %d %d %d %d %d %d %d %d %d %f", &grid_voltage_rating, &grid_current_rating, &out_voltage_rating, &out_freq_rating, &out_current_rating, &out_va_rating, &out_watt_rating, &batt_rating, &batt_recharge_voltage, &batt_under_voltage, &batt_bulk_voltage, &batt_float_voltage, &batt_type, &max_grid_charge_current, &max_charge_current, &in_voltage_range, &out_source_priority, &charger_source_priority, &parallel_max_num, &machine_type, &topology, &out_mode, &batt_redischarge_voltage);
@@ -258,7 +258,7 @@ int main(int argc, char* argv[]) {
                 printf("  \"Load_va\":%d,\n", load_va);
                 printf("  \"Bus_voltage\":%d,\n", voltage_bus);
                 printf("  \"Heatsink_temperature\":%d,\n", temp_heatsink);
-                printf("  \"Battery_capacity\":%d,\n", batt_capacity);
+                printf("  \"Battery_SOC\":%d,\n", batt_soc);
                 printf("  \"Battery_voltage\":%.2f,\n", voltage_batt);
                 printf("  \"Battery_charge_current\":%d,\n", batt_charge_current);
                 printf("  \"Battery_discharge_current\":%d,\n", batt_discharge_current);
