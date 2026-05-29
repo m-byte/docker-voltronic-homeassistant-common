@@ -54,7 +54,30 @@ configure_mqtt_service() {
         "$config" > "$tmp" && mv "$tmp" "$config"
 }
 
+# Poll cadence in seconds. Settable from the Home Assistant add-on options, and
+# mirrored into inverter.conf's run_interval so the poller's per-interval watt-hour
+# fallback matches the real push interval (native QET/QLT counters take precedence
+# when the inverter supports them).
+POLL_INTERVAL=30
+configure_poll_interval() {
+    local options="/data/options.json"
+    local config="/etc/inverter/inverter.conf"
+    local interval
+
+    [ -f "$options" ] || return 0
+    interval=$(jq -r '.poll_interval // empty' "$options" 2>/dev/null)
+    [ -z "$interval" ] && return 0
+
+    POLL_INTERVAL="$interval"
+    if grep -q '^run_interval=' "$config" 2>/dev/null; then
+        sed -i "s/^run_interval=.*/run_interval=${POLL_INTERVAL}/" "$config"
+    else
+        echo "run_interval=${POLL_INTERVAL}" >> "$config"
+    fi
+}
+
 configure_mqtt_service
+configure_poll_interval
 
 # Init the mqtt server for the first time, then every 5 minutes
 # This will re-create the auto-created topics in the MQTT server if HA is restarted...
@@ -64,5 +87,5 @@ watch -n 300 /opt/inverter-mqtt/mqtt-init.sh > /dev/null 2>&1 &
 # Run the MQTT Subscriber process in the background (so that way we can change the configuration on the inverter from home assistant)
 /opt/inverter-mqtt/mqtt-subscriber.sh &
 
-# execute exactly every 30 seconds...
-watch -n 30 /opt/inverter-mqtt/mqtt-push.sh > /dev/null 2>&1
+# execute on the configured cadence (default every 30 seconds)...
+watch -n "$POLL_INTERVAL" /opt/inverter-mqtt/mqtt-push.sh > /dev/null 2>&1

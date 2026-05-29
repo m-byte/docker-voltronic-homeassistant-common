@@ -15,3 +15,7 @@ services:
   - "mqtt:need"
 devices:
   - "/dev/hidraw0:/dev/hidraw0:rwm"
+options:
+  poll_interval: 30
+schema:
+  poll_interval: int(5,3600)

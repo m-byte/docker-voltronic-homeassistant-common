@@ -14,6 +14,8 @@ cInverter::cInverter(std::string devicename) {
     status1[0] = 0;
     status2[0] = 0;
     warnings[0] = 0;
+    energy_total[0] = 0;
+    energy_load[0] = 0;
     mode = 0;
 }
 
@@ -34,6 +36,20 @@ string *cInverter::GetQpiriStatus() {
 string *cInverter::GetWarnings() {
     m.lock();
     string *result = new string(warnings);
+    m.unlock();
+    return result;
+}
+
+string *cInverter::GetEnergyTotal() {
+    m.lock();
+    string *result = new string(energy_total);
+    m.unlock();
+    return result;
+}
+
+string *cInverter::GetLoadEnergyTotal() {
+    m.lock();
+    string *result = new string(energy_load);
     m.unlock();
     return result;
 }
@@ -162,6 +178,28 @@ void cInverter::poll() {
     int n,j;
 
     while (true) {
+
+        // Reading total generated energy counter (QET). Queried first so run-once mode has it
+        // ready before the QMOD/QPIGS/QPIRI gate trips. Unsupported inverters answer "NAK",
+        // which is filtered out when the JSON is emitted.
+        if (!ups_qet_changed) {
+            if (query("QET")) {
+                m.lock();
+                strcpy(energy_total, (const char*)buf+1);
+                m.unlock();
+                ups_qet_changed = true;
+            }
+        }
+
+        // Reading total load (consumed) energy counter (QLT).
+        if (!ups_qlt_changed) {
+            if (query("QLT")) {
+                m.lock();
+                strcpy(energy_load, (const char*)buf+1);
+                m.unlock();
+                ups_qlt_changed = true;
+            }
+        }
 
         // Reading mode
         if (!ups_qmod_changed) {

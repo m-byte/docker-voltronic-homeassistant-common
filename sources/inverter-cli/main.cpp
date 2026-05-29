@@ -33,6 +33,8 @@ atomic_bool ups_qmod_changed(false);
 atomic_bool ups_qpiri_changed(false);
 atomic_bool ups_qpigs_changed(false);
 atomic_bool ups_qpiws_changed(false);
+atomic_bool ups_qet_changed(false);
+atomic_bool ups_qlt_changed(false);
 atomic_bool ups_cmd_executed(false);
 
 
@@ -120,6 +122,8 @@ int main(int argc, char* argv[]) {
     float load_watthour = 0;
     float scc_voltage;
     int batt_discharge_current;
+    int pv_charging_power = 0;   // QPIGS extended field 20 (W); stays 0 if the inverter omits it
+    int qpigs_unused = 0;        // QPIGS extended fields 18-19 (fan offset, EEPROM version) - not used
     char device_status[9];
 
     // Reply2
@@ -141,6 +145,7 @@ int main(int argc, char* argv[]) {
     int in_voltage_range;
     int out_source_priority;
     int charger_source_priority;
+    int parallel_max_num;
     int machine_type;
     int topology;
     int out_mode;
@@ -196,17 +201,25 @@ int main(int argc, char* argv[]) {
             ups_qmod_changed = false;
             ups_qpiri_changed = false;
             ups_qpigs_changed = false;
+            ups_qet_changed = false;
+            ups_qlt_changed = false;
 
             int mode = ups->GetMode();
             string *reply1   = ups->GetQpigsStatus();
             string *reply2   = ups->GetQpiriStatus();
             string *warnings = ups->GetWarnings();
+            string *energy   = ups->GetEnergyTotal();
+            string *energyload = ups->GetLoadEnergyTotal();
 
             if (reply1 && reply2 && warnings) {
 
                 // Parse and display values
-                sscanf(reply1->c_str(), "%f %f %f %f %d %d %d %d %f %d %d %d %f %f %f %d %s", &voltage_grid, &freq_grid, &voltage_out, &freq_out, &load_va, &load_watt, &load_percent, &voltage_bus, &voltage_batt, &batt_charge_current, &batt_capacity, &temp_heatsink, &pv_input_current, &pv_input_voltage, &scc_voltage, &batt_discharge_current, &device_status);
-                sscanf(reply2->c_str(), "%f %f %f %f %f %d %d %f %f %f %f %f %d %d %d %d %d %d - %d %d %d %f", &grid_voltage_rating, &grid_current_rating, &out_voltage_rating, &out_freq_rating, &out_current_rating, &out_va_rating, &out_watt_rating, &batt_rating, &batt_recharge_voltage, &batt_under_voltage, &batt_bulk_voltage, &batt_float_voltage, &batt_type, &max_grid_charge_current, &max_charge_current, &in_voltage_range, &out_source_priority, &charger_source_priority, &machine_type, &topology, &out_mode, &batt_redischarge_voltage);
+                // Extended QPIGS (this inverter returns 4 fields past device status: fan offset,
+                // EEPROM version, PV charging power, status2). We read field 20 (PV charging power).
+                sscanf(reply1->c_str(), "%f %f %f %f %d %d %d %d %f %d %d %d %f %f %f %d %s %d %d %d", &voltage_grid, &freq_grid, &voltage_out, &freq_out, &load_va, &load_watt, &load_percent, &voltage_bus, &voltage_batt, &batt_charge_current, &batt_capacity, &temp_heatsink, &pv_input_current, &pv_input_voltage, &scc_voltage, &batt_discharge_current, &device_status, &qpigs_unused, &qpigs_unused, &pv_charging_power);
+                // QPIRI on this inverter has no '-' separator and returns the parallel-max-number
+                // field before machine type, so parse that slot instead of a literal dash.
+                sscanf(reply2->c_str(), "%f %f %f %f %f %d %d %f %f %f %f %f %d %d %d %d %d %d %d %d %d %d %f", &grid_voltage_rating, &grid_current_rating, &out_voltage_rating, &out_freq_rating, &out_current_rating, &out_va_rating, &out_watt_rating, &batt_rating, &batt_recharge_voltage, &batt_under_voltage, &batt_bulk_voltage, &batt_float_voltage, &batt_type, &max_grid_charge_current, &max_charge_current, &in_voltage_range, &out_source_priority, &charger_source_priority, &parallel_max_num, &machine_type, &topology, &out_mode, &batt_redischarge_voltage);
 
                 // There appears to be a discrepancy in actual DMM measured current vs what the meter is
                 // telling me it's getting, so lets add a variable we can multiply/divide by to adjust if
@@ -218,11 +231,9 @@ int main(int argc, char* argv[]) {
 
                 pv_input_current = pv_input_current * ampfactor;
 
-                // It appears on further inspection of the documentation, that the input current is actually
-                // current that is going out to the battery at battery voltage (NOT at PV voltage).  This
-                // would explain the larger discrepancy we saw before.
-
-                pv_input_watts = (scc_voltage * pv_input_current) * wattfactor;
+                // PV charging power is reported directly by the inverter in the extended QPIGS
+                // response (field 20), so use that rather than estimating it from voltage * current.
+                pv_input_watts = pv_charging_power * wattfactor;
 
                 // Calculate watt-hours generated per run interval period (given as program argument)
                 pv_input_watthour = pv_input_watts / (3600 / runinterval);
@@ -251,6 +262,9 @@ int main(int argc, char* argv[]) {
                 printf("  \"Battery_voltage\":%.2f,\n", voltage_batt);
                 printf("  \"Battery_charge_current\":%d,\n", batt_charge_current);
                 printf("  \"Battery_discharge_current\":%d,\n", batt_discharge_current);
+                // Battery power computed from voltage x current (no native battery energy counter exists).
+                printf("  \"Battery_charge_watt\":%.1f,\n", voltage_batt * batt_charge_current);
+                printf("  \"Battery_discharge_watt\":%.1f,\n", voltage_batt * batt_discharge_current);
                 printf("  \"Load_status_on\":%c,\n", device_status[3]);
                 printf("  \"SCC_charge_on\":%c,\n", device_status[6]);
                 printf("  \"AC_charge_on\":%c,\n", device_status[7]);
@@ -263,12 +277,20 @@ int main(int argc, char* argv[]) {
                 printf("  \"Out_source_priority\":%d,\n", out_source_priority);
                 printf("  \"Charger_source_priority\":%d,\n", charger_source_priority);
                 printf("  \"Battery_redischarge_voltage\":%.1f,\n", batt_redischarge_voltage);
+                // Energy counters (QET = generated, QLT = consumed) are only emitted when the
+                // inverter returned a numeric value (unsupported commands answer "NAK").
+                if (energy && energy->size() && (*energy)[0] >= '0' && (*energy)[0] <= '9')
+                    printf("  \"PV_total_watthour\":%ld,\n", atol(energy->c_str()));
+                if (energyload && energyload->size() && (*energyload)[0] >= '0' && (*energyload)[0] <= '9')
+                    printf("  \"Load_total_watthour\":%ld,\n", atol(energyload->c_str()));
                 printf("  \"Warnings\":\"%s\"\n", warnings->c_str());
                 printf("}\n");
 
                 // Delete reply string so we can update with new data when polled again...
                 delete reply1;
                 delete reply2;
+                delete energy;
+                delete energyload;
 
                 if(runOnce) {
                     // Do once and exit instead of loop endlessly

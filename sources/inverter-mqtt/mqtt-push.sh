@@ -70,6 +70,12 @@ PV_in_watts=`echo $INVERTER_DATA | jq '.PV_in_watts' -r`
 PV_in_watthour=`echo $INVERTER_DATA | jq '.PV_in_watthour' -r`
 [ ! -z "$PV_in_watthour" ] && pushMQTTData "PV_in_watthour" "$PV_in_watthour"
 
+PV_total_watthour=`echo $INVERTER_DATA | jq '.PV_total_watthour' -r`
+[ ! -z "$PV_total_watthour" ] && [ "$PV_total_watthour" != "null" ] && pushMQTTData "PV_total_watthour" "$PV_total_watthour"
+
+Load_total_watthour=`echo $INVERTER_DATA | jq '.Load_total_watthour' -r`
+[ ! -z "$Load_total_watthour" ] && [ "$Load_total_watthour" != "null" ] && pushMQTTData "Load_total_watthour" "$Load_total_watthour"
+
 SCC_voltage=`echo $INVERTER_DATA | jq '.SCC_voltage' -r`
 [ ! -z "$SCC_voltage" ] && pushMQTTData "SCC_voltage" "$SCC_voltage"
 
@@ -102,6 +108,12 @@ Battery_charge_current=`echo $INVERTER_DATA | jq '.Battery_charge_current' -r`
 
 Battery_discharge_current=`echo $INVERTER_DATA | jq '.Battery_discharge_current' -r`
 [ ! -z "$Battery_discharge_current" ] && pushMQTTData "Battery_discharge_current" "$Battery_discharge_current"
+
+Battery_charge_watt=`echo $INVERTER_DATA | jq '.Battery_charge_watt' -r`
+[ ! -z "$Battery_charge_watt" ] && [ "$Battery_charge_watt" != "null" ] && pushMQTTData "Battery_charge_watt" "$Battery_charge_watt"
+
+Battery_discharge_watt=`echo $INVERTER_DATA | jq '.Battery_discharge_watt' -r`
+[ ! -z "$Battery_discharge_watt" ] && [ "$Battery_discharge_watt" != "null" ] && pushMQTTData "Battery_discharge_watt" "$Battery_discharge_watt"
 
 Load_status_on=`echo $INVERTER_DATA | jq '.Load_status_on' -r`
 [ ! -z "$Load_status_on" ] && pushMQTTData "Load_status_on" "$Load_status_on"

@@ -12,6 +12,8 @@ class cInverter {
     char warnings[1024];
     char status1[1024];
     char status2[1024];
+    char energy_total[1024];
+    char energy_load[1024];
     char mode;
 
     std::string device;
@@ -33,6 +35,8 @@ class cInverter {
         string *GetQpiriStatus();
         string *GetQpigsStatus();
         string *GetWarnings();
+        string *GetEnergyTotal();
+        string *GetLoadEnergyTotal();
 
         int GetMode();
         void ExecuteCmd(const std::string cmd);
