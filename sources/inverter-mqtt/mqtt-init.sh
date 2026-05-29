@@ -8,7 +8,7 @@ MQTT_TOPIC=`cat /etc/inverter/mqtt.json | jq '.topic' -r`
 MQTT_DEVICENAME=`cat /etc/inverter/mqtt.json | jq '.devicename' -r`
 MQTT_USERNAME=`cat /etc/inverter/mqtt.json | jq '.username' -r`
 MQTT_PASSWORD=`cat /etc/inverter/mqtt.json | jq '.password' -r`
-MQTT_CLIENTID=`cat /etc/inverter/mqtt.json | jq '.clientid' -r`
+MQTT_CLIENTID=`cat /etc/inverter/mqtt.json | jq '.clientid' -r`-discovery-$$
 
 # registerTopic <name> <unit> <icon> [device_class] [state_class]
 # device_class/state_class are optional; omitted when empty so Home Assistant
@@ -34,6 +34,7 @@ registerTopic () {
         -u "$MQTT_USERNAME" \
         -P "$MQTT_PASSWORD" \
         -i $MQTT_CLIENTID \
+        -r \
         -t "$MQTT_TOPIC/sensor/${object_id}/config" \
         -m "$payload"
 }
@@ -45,6 +46,7 @@ registerInverterRawCMD () {
         -u "$MQTT_USERNAME" \
         -P "$MQTT_PASSWORD" \
         -i $MQTT_CLIENTID \
+        -r \
         -t "$MQTT_TOPIC/sensor/$MQTT_DEVICENAME/config" \
         -m "{
             \"name\": \""$MQTT_DEVICENAME"\",

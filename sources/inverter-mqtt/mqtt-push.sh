@@ -8,7 +8,7 @@ pushMQTTData () {
     MQTT_DEVICENAME=`cat /etc/inverter/mqtt.json | jq '.devicename' -r`
     MQTT_USERNAME=`cat /etc/inverter/mqtt.json | jq '.username' -r`
     MQTT_PASSWORD=`cat /etc/inverter/mqtt.json | jq '.password' -r`
-	MQTT_CLIENTID=`cat /etc/inverter/mqtt.json | jq '.clientid' -r`
+	MQTT_CLIENTID=`cat /etc/inverter/mqtt.json | jq '.clientid' -r`-push-$$
 
     mosquitto_pub \
         -h $MQTT_SERVER \
@@ -153,4 +153,3 @@ Battery_redischarge_voltage=`echo $INVERTER_DATA | jq '.Battery_redischarge_volt
 
 Warnings=`echo $INVERTER_DATA | jq '.Warnings' -r`
 [ ! -z "$Warnings" ] && pushMQTTData "Warnings" "$Warnings"
-
